@@ -1,0 +1,21 @@
+# symosc 的數學模組（codes/utils/symosc.py）做成可安裝的套件：只需要 numpy，不含 manim 場景與畫圖。
+#     pip install -e .        （在本資料夾；之後任何地方都能 import symosc）
+#     symosc-check            （或 python -m symosc：跑 check()）
+# 正本仍是 codes/utils/symosc.py：場景照舊用 `from utils import symosc`，combkit 的 sync_from_symosc.py 也照舊。
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "symosc"
+version = "0.1.0"
+description = "Symmetric coupled oscillators: D3, breaking to C3/C2, and the quaternion group Q8 (numpy only)"
+requires-python = ">=3.8"
+dependencies = ["numpy"]
+
+[project.scripts]
+symosc-check = "symosc:main"
+
+[tool.setuptools]
+package-dir = { "" = "codes/utils" }
+py-modules = ["symosc"]

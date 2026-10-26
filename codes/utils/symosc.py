@@ -19,7 +19,8 @@ D3（三個相同的擺放在正三角形頂點，兩兩用彈簧 k 相連，自
     P_CYC                    輪換矩陣 P_{j,j+1} = 1；P v_m = ω^m v_m，v_m = (1, ω^m, ω^{2m})/√3
     H_flux(a, b, phi)        a I + b e^{iφ} P + b e^{−iφ} Pᵀ；flux_levels(a, b, phi) = a + 2b cos(φ + 2πm/3)，m = 0, 1, −1
     gyro_freqs(k0, k, g)     m ẍ + G ẋ + K x = 0 的正頻率（m = 0, +1, −1）；裂距 √3 g
-    precession(t, delta)     駐波 v_{+1} + v_{−1} 在兩個頻率差 delta 下的振幅分布 2cos(2πj/3 + δt/2)
+    precession(t, delta)     駐波 v_{+1} + v_{−1} 在頻率差 delta = ω_{−1} − ω_{+1} 下的振幅分布 2cos(2πj/3 − δt/2)
+                             （圖樣往 j 增加的方向轉：1→2→3；check() 用 ODE 積分核對方向）
     K_c2(k0, k, delta)       換掉一根彈簧；c2_levels → k0、k0+3k（對稱 (2,−1,−1)）、k0+3k+2δ（反對稱 (0,1,−1)）
 Q8（8 個擺放在 8 個群元素上，h 和 h·s 用彈簧相連：s = ±i、±j、±k 各用 ki、kj、kk）
     Q8_NAMES                 ['1', 'i', 'j', 'k', '-1', '-i', '-j', '-k']；q8_mul(a, b)；q8_inv(a)
@@ -134,7 +135,8 @@ def gyro_freqs_numeric(k0: float, k: float, g: float) -> list:
 
 
 def precession(t: float, delta: float) -> list:
-    return [2 * math.cos(2 * math.pi * j / 3 + delta * t / 2) for j in range(3)]
+    """cos(θ_j + ω₊t) + cos(θ_j − ω₋t) = 2cos(ω̄t)·cos(θ_j − δt/2)：m = +1 是 v₁e^{iω₊t}、m = −1 是 v₋₁e^{iω₋t}。"""
+    return [2 * math.cos(2 * math.pi * j / 3 - delta * t / 2) for j in range(3)]
 
 
 def K_c2(k0: float, k: float, delta: float) -> np.ndarray:
@@ -289,6 +291,24 @@ def check():
     assert abs(gf[-1] - gf[1] - math.sqrt(3) * 0.2) < 1e-12 and round(gf[0], 6) == 1.0
     assert round(gf[1], 4) == 1.4174 and round(gf[-1], 4) == 1.7638
     assert np.allclose(precession(0, 1.0), [2, -1, -1])
+    # 進動方向：一階化 [x, v]' = A [x, v] 用 RK4 積分 x(0) = (2,−1,−1)、ẋ(0) = 0，
+    # 每個時刻前後 2（≈ 一個載波週期）內振幅最大的擺 = precession() 的 |峰|（1→3→2 每半格、1→2→3 每格）
+    d = gf[-1] - gf[1]
+    hop = 4 * math.pi / (3 * d)
+    G = 0.2 * (P_CYC - P_CYC.T)
+    A = np.block([[np.zeros((3, 3)), np.eye(3)], [-K_d3(1.0, 0.5), -G]])
+    y, h, xs = np.array([2.0, -1, -1, 0, 0, 0]), 2e-3, []
+    for _ in range(int((2 * hop + 2) / h) + 1):
+        xs.append(y[:3].copy())
+        k1 = A @ y
+        k2 = A @ (y + h / 2 * k1)
+        k3 = A @ (y + h / 2 * k2)
+        k4 = A @ (y + h * k3)
+        y = y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    xs = np.array(xs)
+    for T, peak in ((hop / 2, 2), (hop, 1), (2 * hop, 2)):
+        win = xs[int((T - 2) / h):int((T + 2) / h)]
+        assert int(np.argmax(np.abs(win).max(axis=0))) == peak == int(np.argmax(np.abs(precession(T, d))))
     # ---- C2
     Kc = K_c2(1.0, 0.5, 0.25)
     assert np.allclose(Kc @ [2, -1, -1], 2.5 * np.array([2, -1, -1]))
@@ -344,8 +364,13 @@ def check():
     return True
 
 
-if __name__ == "__main__":
+def main():
+    """`python utils/symosc.py`、`python -m symosc` 與安裝後的 `symosc-check` 都跑這裡。"""
     import sys
     sys.stdout.reconfigure(encoding="utf-8")
     check()
     print("symosc：D3 約化與拍、破缺到 C3／C2、Q8 的左右標籤與四元數型全部驗證通過")
+
+
+if __name__ == "__main__":
+    main()

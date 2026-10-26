@@ -11,6 +11,8 @@
 - ManimGL **1.7.2**（3Blue1Brown 版，`manimgl` 指令），**不是** Manim Community；不要升級或重裝。
 - combkit **1.32.0 以上**（`C:\mypython\manim\projects\combkit`；場景用 `sys.path.insert` 載入）：`ChuScene`、`tex_table`、`assert_in_frame`。
 - numpy（數學模組 `utils/symosc.py`）。
+- 只要數學、不要 manim：在上一層（專案根目錄）執行 `pip install -e .`（`pyproject.toml` 只裝 `symosc` 這個模組，相依只有 numpy），
+  之後任何地方都能 `import symosc`，`symosc-check` 或 `python -m symosc` 跑自我測試。
 
 ## 2. 指令（都在本資料夾執行）
 

@@ -37,6 +37,7 @@ def check_math():
     assert [round(gf[m], 4) for m in (1, -1)] == [1.4174, 1.7638] and round(gf[-1] - gf[1], 4) == round(math.sqrt(3) * G, 4) == 0.3464
     d = gf[-1] - gf[1]
     assert round(4 * math.pi / (3 * d), 1) == 12.1
+    assert np.allclose(S.precession(4 * math.pi / (3 * d), d), [-1, 2, -1])      # 一格之後峰在擺 2（1→2→3）
     assert S.c2_levels(1.0, 0.5, DELTA) == {"A1": 1.0, "sym": 2.5, "anti": 3.0}
     M = 2 * np.eye(3) + 0.3 * S.P_CYC + 0.7 * S.P_CYC @ S.P_CYC
     assert not np.allclose(M, M.T)
@@ -134,7 +135,7 @@ def part_precession(s):
     tri = O.osc_triangle(1.5, cen)
     t = ValueTracker(0.0)
     bars = always_redraw(lambda: O.radial_bars(S.precession(t.get_value(), d), 1.5, cen, 0.33, width=10))
-    note = Tex(r"\text{pattern}\ \propto\cos(2\pi j/3+\Delta\omega\,t/2)", font_size=28).move_to([3.0, 0.1, 0])
+    note = Tex(r"\text{pattern}\ \propto\cos(2\pi j/3-\Delta\omega\,t/2)", font_size=28).move_to([3.0, 0.1, 0])
     hop = Tex(rf"4\pi/(3\Delta\omega)\approx{4 * math.pi / (3 * d):.1f}", font_size=30).move_to([3.0, -0.8, 0])
     assert_in_frame(info, tri, note, hop)
     s.play(FadeIn(info), FadeIn(tri), run_time=1.0)

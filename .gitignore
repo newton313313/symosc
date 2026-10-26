@@ -6,6 +6,10 @@ codes/latex_cache/
 # Python
 __pycache__/
 *.pyc
+# pip install / build by-products (pyproject.toml)
+*.egg-info/
+build/
+dist/
 # Page images made by ref/page_png.py (regenerable)
 ref/png/
 # LaTeX build by-products (the PDFs are kept)
